@@ -1,0 +1,22 @@
+{
+  "name": "openbrolly-locations",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev:public": "pnpm --filter @openbrolly/public dev",
+    "dev:admin": "pnpm --filter @openbrolly/admin dev",
+    "build:public": "pnpm --filter @openbrolly/public build",
+    "build:admin": "pnpm --filter @openbrolly/admin build",
+    "build": "pnpm run build:public && pnpm run build:admin",
+    "seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "deploy:public": "pnpm build:public && pnpm --filter @openbrolly/public run deploy",
+    "deploy:admin": "pnpm build:admin && pnpm --filter @openbrolly/admin run deploy",
+    "deploy:all": "pnpm run build && pnpm --filter @openbrolly/public run deploy && pnpm --filter @openbrolly/admin run deploy"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

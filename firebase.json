@@ -1,0 +1,25 @@
+{
+  "hosting": [
+    {
+      "target": "public",
+      "source": "apps/public",
+      "frameworksBackend": {
+        "region": "us-central1"
+      }
+    },
+    {
+      "target": "admin",
+      "source": "apps/admin",
+      "frameworksBackend": {
+        "region": "us-central1"
+      }
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}

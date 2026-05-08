@@ -1,0 +1,27 @@
+{
+  "name": "@openbrolly/firebase",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./admin": {
+      "types": "./src/firebaseAdmin.ts",
+      "default": "./src/firebaseAdmin.ts"
+    },
+    "./types": {
+      "types": "./src/types.ts",
+      "default": "./src/types.ts"
+    }
+  },
+  "dependencies": {
+    "firebase": "^11.3.0",
+    "firebase-admin": "^13.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "openbrolly-core"
+  },
+  "targets": {
+    "openbrolly-core": {
+      "hosting": {
+        "public": [
+          "openbrollypubliclocations"
+        ],
+        "admin": [
+          "openbrolly-admin"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

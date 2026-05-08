@@ -1,0 +1,67 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    // Returns the clientId stored on the authenticated user's profile,
+    // or null if the user document doesn't exist.
+    function clientIdForUser(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid))
+        ? get(/databases/$(database)/documents/users/$(uid)).data.clientId
+        : null
+    }
+
+    // True when the signed-in user is the admin for the given clientId.
+    // NOTE: the admin app uses the Firebase Admin SDK which bypasses all
+    // security rules. These rules apply only to client-SDK access (e.g.
+    // the public site's enquiry forms) and provide defense-in-depth.
+    function isClientAdmin(clientId) {
+      return request.auth != null
+          && clientIdForUser(request.auth.uid) == clientId
+    }
+
+    // ── Users ─────────────────────────────────────────────────────────────────
+    // Users can only read their own record (needed to resolve clientId).
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid
+    }
+
+    // ── Clients ───────────────────────────────────────────────────────────────
+    match /clients/{clientId} {
+
+      // Client document (brandConfig, etc.) — admin only.
+      allow read, write: if isClientAdmin(clientId)
+
+      // ── Locations ───────────────────────────────────────────────────────────
+      match /locations/{locationId} {
+
+        // Published locations are publicly readable (public site browse/detail).
+        // Drafts are readable only by the owning admin.
+        allow read: if resource.data.status == 'published'
+                    || isClientAdmin(clientId)
+
+        // Writes (create / update / delete) — admin only.
+        allow write: if isClientAdmin(clientId)
+
+        // ── Enquiries ─────────────────────────────────────────────────────────
+        match /enquiries/{enquiryId} {
+          // Anyone can submit a contact or permit enquiry (public form, no auth).
+          allow create: if true
+
+          // Only the owning admin can read or mark an enquiry as read/replied.
+          allow read, update: if isClientAdmin(clientId)
+        }
+      }
+
+      // ── Field schema ────────────────────────────────────────────────────────
+      // Publicly readable so the public site can render custom fields on
+      // location detail pages without requiring a sign-in.
+      match /fieldSchema/{document=**} {
+        allow read: if true
+        allow write: if isClientAdmin(clientId)
+      }
+    }
+  }
+}
