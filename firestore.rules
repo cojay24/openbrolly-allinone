@@ -31,8 +31,11 @@ service cloud.firestore {
     // ── Clients ───────────────────────────────────────────────────────────────
     match /clients/{clientId} {
 
-      // Client document (brandConfig, etc.) — admin only.
-      allow read, write: if isClientAdmin(clientId)
+      // Client document (name, brandConfig) is publicly readable so the
+      // public site can load live brand colours without authentication.
+      // Writes remain admin-only.
+      allow read: if true
+      allow write: if isClientAdmin(clientId)
 
       // ── Locations ───────────────────────────────────────────────────────────
       match /locations/{locationId} {
