@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { getClient } from '@/lib/db.server'
+import { BrandProvider } from '@/components/BrandProvider'
 import './globals.css'
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID ?? 'demo-client'
@@ -70,6 +71,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             )}
           </div>
         </header>
+
+        {/* Keeps brand colours in sync with Firestore without a rebuild */}
+        <BrandProvider />
 
         {/* ── Page content ── */}
         <main>{children}</main>
