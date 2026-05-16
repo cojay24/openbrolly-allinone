@@ -1,39 +1,20 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
-import { doc, getDoc } from 'firebase/firestore'
-import { getDb } from '@openbrolly/firebase'
+import type { ReactNode } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { AuthModal } from './AuthModal'
 
-type AccountStatus = 'active' | 'pending' | 'rejected'
-
 /**
  * Wraps the public site's page content.
- * - Loading:   spinner while Firebase resolves auth state
+ * - Loading:   spinner while Firebase Auth + profile resolves
  * - Signed out: blurs page + shows AuthModal (non-dismissable)
- * - Rejected:  shows account-blocked message
- * - Signed in + active: renders children normally
+ * - Rejected:  shows account-blocked screen
+ * - Signed in + active/pending: renders children normally
  */
 export function AuthGate({ children }: { children: ReactNode }) {
-  const { user, loading, signOut } = useAuth()
-  const [accountStatus, setAccountStatus] = useState<AccountStatus | null>(null)
-  const [statusLoading, setStatusLoading] = useState(false)
+  const { user, userProfile, loading, signOut } = useAuth()
 
-  useEffect(() => {
-    if (!user) { setAccountStatus(null); return }
-    setStatusLoading(true)
-    getDoc(doc(getDb(), 'users', user.uid))
-      .then((snap) => {
-        setAccountStatus((snap.data()?.accountStatus as AccountStatus) ?? 'active')
-      })
-      .catch(() => setAccountStatus('active')) // fail open — don't block on Firestore error
-      .finally(() => setStatusLoading(false))
-  }, [user])
-
-  const isLoading = loading || (user !== null && statusLoading)
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
         <svg
@@ -60,7 +41,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     )
   }
 
-  if (accountStatus === 'rejected') {
+  if (userProfile?.accountStatus === 'rejected') {
     return (
       <div className="min-h-[70vh] flex items-center justify-center p-6">
         <div className="max-w-sm w-full bg-white rounded-2xl shadow-lg border border-gray-100 p-8 text-center">

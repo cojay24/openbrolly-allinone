@@ -4,14 +4,23 @@
  * Do NOT import 'server-only' here.
  */
 
+export interface SubmittedBy {
+  uid: string
+  firstName: string
+  surname: string
+  email: string
+}
+
 export interface PlainLocation {
   id: string
   title: string
   description: string
   categories: string[]
   images: string[]
-  status: 'draft' | 'published'
+  status: 'draft' | 'published' | 'pending-approval' | 'rejected'
   createdAt: string
   updatedAt: string
+  submittedBy?: SubmittedBy
+  submittedAt?: string
   [key: string]: unknown
 }

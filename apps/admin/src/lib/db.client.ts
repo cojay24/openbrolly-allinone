@@ -8,15 +8,24 @@ import type { FieldDefinition, FieldSchema } from '@openbrolly/firebase/types'
 
 // ─── Serialisable types ───────────────────────────────────────────────────────
 
+export interface SubmittedBy {
+  uid: string
+  firstName: string
+  surname: string
+  email: string
+}
+
 export interface PlainLocation {
   id: string
   title: string
   description: string
   categories: string[]
   images: string[]
-  status: 'draft' | 'published'
+  status: 'draft' | 'published' | 'pending-approval' | 'rejected'
   createdAt: string
   updatedAt: string
+  submittedBy?: SubmittedBy
+  submittedAt?: string
   [key: string]: unknown
 }
 
@@ -197,6 +206,26 @@ export async function saveBrandConfig(
     'brandConfig.logo': config.logo,
     'brandConfig.primaryColor': config.primaryColor,
     'brandConfig.secondaryColor': config.secondaryColor,
+  })
+}
+
+// ─── Location submission review ───────────────────────────────────────────────
+
+export async function approveLocation(
+  clientId: string,
+  locationId: string,
+  publishNow: boolean,
+): Promise<void> {
+  await updateDoc(doc(getDb(), 'clients', clientId, 'locations', locationId), {
+    status: publishNow ? 'published' : 'draft',
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export async function rejectLocation(clientId: string, locationId: string): Promise<void> {
+  await updateDoc(doc(getDb(), 'clients', clientId, 'locations', locationId), {
+    status: 'rejected',
+    updatedAt: serverTimestamp(),
   })
 }
 

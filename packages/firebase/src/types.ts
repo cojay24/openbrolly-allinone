@@ -38,7 +38,14 @@ export interface FieldSchema {
 
 // ─── Location ─────────────────────────────────────────────────────────────────
 
-export type LocationStatus = 'draft' | 'published'
+export type LocationStatus = 'draft' | 'published' | 'pending-approval' | 'rejected'
+
+export interface SubmittedBy {
+  uid: string
+  firstName: string
+  surname: string
+  email: string
+}
 
 export interface Location {
   id: string
@@ -49,6 +56,9 @@ export interface Location {
   status: LocationStatus
   createdAt: Timestamp | Date
   updatedAt: Timestamp | Date
+  /** Set when a location owner submits for approval */
+  submittedBy?: SubmittedBy
+  submittedAt?: Timestamp | Date
   /** Dynamic custom fields defined by the client's fieldSchema */
   [key: string]: unknown
 }

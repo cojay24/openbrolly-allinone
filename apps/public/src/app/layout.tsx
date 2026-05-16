@@ -5,6 +5,7 @@ import { BrandProvider } from '@/components/BrandProvider'
 import { AuthProvider } from '@/context/AuthContext'
 import { AuthGate } from '@/components/AuthGate'
 import { UserMenu } from '@/components/UserMenu'
+import { SubmitLocationButton } from '@/components/SubmitLocationButton'
 import './globals.css'
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID ?? 'demo-client'
@@ -74,8 +75,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 )}
               </div>
 
-              {/* User menu (renders nothing until signed in) */}
-              <UserMenu />
+              {/* Right-side header actions */}
+              <div className="flex items-center gap-3">
+                <SubmitLocationButton />
+                <UserMenu />
+              </div>
             </div>
           </header>
 

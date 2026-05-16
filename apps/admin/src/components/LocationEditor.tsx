@@ -41,7 +41,10 @@ export function LocationEditor({ clientId, location, fieldSchema, isNew }: Props
   // ── Form state ──
   const [title, setTitle] = useState(location?.title ?? '')
   const [description, setDescription] = useState(location?.description ?? '')
-  const [status, setStatus] = useState<'draft' | 'published'>(location?.status ?? 'draft')
+  const rawStatus = location?.status
+  const [status, setStatus] = useState<'draft' | 'published'>(
+    rawStatus === 'published' ? 'published' : 'draft'
+  )
   const [categories, setCategories] = useState(
     (location?.categories as string[] | undefined)?.join(', ') ?? '',
   )

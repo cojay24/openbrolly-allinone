@@ -2,17 +2,21 @@
   "hosting": [
     {
       "target": "public",
-      "source": "apps/public",
-      "frameworksBackend": {
-        "region": "us-central1"
-      }
+      "public": "apps/public/out",
+      "cleanUrls": true,
+      "trailingSlash": false,
+      "rewrites": [
+        { "source": "**", "destination": "/index.html" }
+      ]
     },
     {
       "target": "admin",
-      "source": "apps/admin",
-      "frameworksBackend": {
-        "region": "us-central1"
-      }
+      "public": "apps/admin/out",
+      "cleanUrls": true,
+      "trailingSlash": false,
+      "rewrites": [
+        { "source": "**", "destination": "/index.html" }
+      ]
     }
   ],
   "firestore": {

@@ -30,6 +30,14 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('clientId', null) != null
     }
 
+    // True when the signed-in user is an approved Location Owner.
+    function isApprovedLocationOwner() {
+      return request.auth != null
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountType == 'location-owner'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountStatus == 'active'
+    }
+
     // ── Users ─────────────────────────────────────────────────────────────────
     match /users/{uid} {
       // Admins can read any user profile (for the user management dashboard).
@@ -71,13 +79,22 @@ service cloud.firestore {
       // ── Locations ───────────────────────────────────────────────────────────
       match /locations/{locationId} {
 
-        // Published locations are publicly readable (public site browse/detail).
-        // Drafts are readable only by the owning admin.
+        // Published locations are publicly readable.
+        // Drafts and admin-managed statuses are admin-only.
+        // Location owners can read their own submissions.
         allow read: if resource.data.status == 'published'
                     || isClientAdmin(clientId)
+                    || (request.auth != null && resource.data.submittedBy.uid == request.auth.uid)
 
-        // Writes (create / update / delete) — admin only.
-        allow write: if isClientAdmin(clientId)
+        // Approved location owners may create a location in pending-approval state.
+        // They must set submittedBy.uid to their own UID (prevents spoofing).
+        allow create: if isClientAdmin(clientId)
+                      || (isApprovedLocationOwner()
+                          && request.resource.data.status == 'pending-approval'
+                          && request.resource.data.submittedBy.uid == request.auth.uid)
+
+        // Updates and deletes remain admin-only.
+        allow update, delete: if isClientAdmin(clientId)
 
         // ── Enquiries ─────────────────────────────────────────────────────────
         match /enquiries/{enquiryId} {
