@@ -32,8 +32,20 @@ const INITIAL: FormState = {
 const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID ?? 'demo-client'
 
 export function PermitModal({ locationId, locationTitle, onClose }: Props) {
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
   const [form, setForm] = useState<FormState>(INITIAL)
+
+  // Pre-fill from profile when available
+  useEffect(() => {
+    if (!userProfile) return
+    setForm((prev) => ({
+      ...prev,
+      name: prev.name || `${userProfile.firstName} ${userProfile.surname}`.trim(),
+      email: prev.email || userProfile.email,
+      phone: prev.phone || userProfile.phone,
+      organisation: prev.organisation || userProfile.company,
+    }))
+  }, [userProfile])
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const firstInputRef = useRef<HTMLInputElement>(null)

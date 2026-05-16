@@ -23,11 +23,22 @@ const INITIAL: FormState = { name: '', email: '', phone: '', message: '' }
 const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID ?? 'demo-client'
 
 export function EnquiryModal({ locationId, locationTitle, onClose }: Props) {
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
   const [form, setForm] = useState<FormState>(INITIAL)
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const firstInputRef = useRef<HTMLInputElement>(null)
+
+  // Pre-fill from profile when available (covers both instant load and async load)
+  useEffect(() => {
+    if (!userProfile) return
+    setForm((prev) => ({
+      ...prev,
+      name: prev.name || `${userProfile.firstName} ${userProfile.surname}`.trim(),
+      email: prev.email || userProfile.email,
+      phone: prev.phone || userProfile.phone,
+    }))
+  }, [userProfile])
 
   // Focus first input on mount
   useEffect(() => { firstInputRef.current?.focus() }, [])
