@@ -22,18 +22,34 @@ service cloud.firestore {
           && clientIdForUser(request.auth.uid) == clientId
     }
 
+    // True when the signed-in user is any system admin (has a clientId field).
+    // Used to allow admins to read and manage all user accounts.
+    function isAdmin() {
+      return request.auth != null
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('clientId', null) != null
+    }
+
     // ── Users ─────────────────────────────────────────────────────────────────
     match /users/{uid} {
-      // Users can read and update their own profile.
-      // Create is needed for signup (writing the profile doc after auth creation).
-      allow read, create: if request.auth != null && request.auth.uid == uid
+      // Admins can read any user profile (for the user management dashboard).
+      // Users can read their own profile.
+      allow read: if request.auth != null
+                  && (request.auth.uid == uid || isAdmin())
 
-      // Updates are allowed but accountType and accountStatus are immutable from
-      // the client — only the admin SDK (backend) can change those.
+      // Any authenticated user can create their own profile (signup flow).
+      allow create: if request.auth != null && request.auth.uid == uid
+
+      // Users can update their own profile but cannot change accountType or
+      // accountStatus — those are admin-only fields.
+      // Admins can update any field on any user profile.
       allow update: if request.auth != null
-                    && request.auth.uid == uid
-                    && request.resource.data.accountType == resource.data.accountType
-                    && request.resource.data.accountStatus == resource.data.accountStatus
+                    && (
+                      (request.auth.uid == uid
+                       && request.resource.data.accountType == resource.data.accountType
+                       && request.resource.data.accountStatus == resource.data.accountStatus)
+                      || isAdmin()
+                    )
 
       // ── Per-client lists ───────────────────────────────────────────────────
       // Lists are scoped per client so the same user has separate lists across

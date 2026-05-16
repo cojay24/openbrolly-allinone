@@ -3,13 +3,15 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAdmin } from '@/context/AdminContext'
-import { getDashboardStats } from '@/lib/db.client'
+import { getDashboardStats, getUsers } from '@/lib/db.client'
 
 interface Stats {
   totalLocations: number
   publishedLocations: number
   totalEnquiries: number
   unreadEnquiries: number
+  totalUsers: number
+  pendingUsers: number
 }
 
 export default function DashboardPage() {
@@ -18,7 +20,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!clientId) return
-    getDashboardStats(clientId).then(setStats).catch(console.error)
+    Promise.all([getDashboardStats(clientId), getUsers()])
+      .then(([locationStats, users]) => {
+        setStats({
+          ...locationStats,
+          totalUsers: users.length,
+          pendingUsers: users.filter((u) => u.accountStatus === 'pending').length,
+        })
+      })
+      .catch(console.error)
   }, [clientId])
 
   return (
@@ -36,6 +46,12 @@ export default function DashboardPage() {
             label="Unread enquiries"
             value={stats.unreadEnquiries}
             highlight={stats.unreadEnquiries > 0}
+          />
+          <StatCard label="Registered users" value={stats.totalUsers} />
+          <StatCard
+            label="Pending approvals"
+            value={stats.pendingUsers}
+            highlight={stats.pendingUsers > 0}
           />
         </div>
       ) : (

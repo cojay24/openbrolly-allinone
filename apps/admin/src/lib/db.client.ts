@@ -200,6 +200,57 @@ export async function saveBrandConfig(
   })
 }
 
+// ─── User management ──────────────────────────────────────────────────────────
+
+export type AccountType   = 'viewer' | 'location-owner'
+export type AccountStatus = 'active' | 'pending' | 'rejected'
+
+export interface PlainUser {
+  uid: string
+  firstName: string
+  surname: string
+  email: string
+  phone: string
+  company: string
+  accountType: AccountType
+  accountStatus: AccountStatus
+  createdAt: string
+}
+
+/**
+ * Fetches all registered public-site users.
+ * Requires the calling admin user to have a `clientId` field (isAdmin() rule).
+ */
+export async function getUsers(): Promise<PlainUser[]> {
+  const snap = await getDocs(collection(getDb(), 'users'))
+  return snap.docs
+    .map((d) => {
+      const data = d.data()
+      // Skip admin accounts (they have a clientId field)
+      if (data.clientId) return null
+      return {
+        uid: d.id,
+        firstName:     (data.firstName     as string) ?? '',
+        surname:       (data.surname       as string) ?? '',
+        email:         (data.email         as string) ?? '',
+        phone:         (data.phone         as string) ?? '',
+        company:       (data.company       as string) ?? '',
+        accountType:   (data.accountType   as AccountType)   ?? 'viewer',
+        accountStatus: (data.accountStatus as AccountStatus) ?? 'active',
+        createdAt:     serializeValue(data.createdAt) as string ?? '',
+      } satisfies PlainUser
+    })
+    .filter(Boolean) as PlainUser[]
+}
+
+export async function updateUserAccountType(uid: string, accountType: AccountType): Promise<void> {
+  await updateDoc(doc(getDb(), 'users', uid), { accountType })
+}
+
+export async function updateUserAccountStatus(uid: string, accountStatus: AccountStatus): Promise<void> {
+  await updateDoc(doc(getDb(), 'users', uid), { accountStatus })
+}
+
 export async function uploadLogo(clientId: string, file: File): Promise<string> {
   if (file.size > 2 * 1024 * 1024) throw new Error('File exceeds 2 MB limit.')
   if (!file.type.startsWith('image/')) throw new Error('File must be an image.')
