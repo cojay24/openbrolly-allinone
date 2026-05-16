@@ -23,9 +23,24 @@ service cloud.firestore {
     }
 
     // ── Users ─────────────────────────────────────────────────────────────────
-    // Users can only read their own record (needed to resolve clientId).
     match /users/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid
+      // Users can read and update their own profile.
+      // Create is needed for signup (writing the profile doc after auth creation).
+      allow read, create: if request.auth != null && request.auth.uid == uid
+
+      // Updates are allowed but accountType and accountStatus are immutable from
+      // the client — only the admin SDK (backend) can change those.
+      allow update: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.accountType == resource.data.accountType
+                    && request.resource.data.accountStatus == resource.data.accountStatus
+
+      // ── Per-client lists ───────────────────────────────────────────────────
+      // Lists are scoped per client so the same user has separate lists across
+      // different client deployments. Only the owning user can read or write.
+      match /clientLists/{clientId}/lists/{listId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid
+      }
     }
 
     // ── Clients ───────────────────────────────────────────────────────────────

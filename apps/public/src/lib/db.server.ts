@@ -1,6 +1,9 @@
 import 'server-only'
 import { getAdminDb } from '@openbrolly/firebase/admin'
 import type { FieldSchema } from '@openbrolly/firebase/types'
+import type { PlainLocation } from './types'
+
+export type { PlainLocation }
 
 // Plain serialisable versions of Firestore documents (Timestamps → ISO strings)
 export interface PlainClient {
@@ -12,18 +15,6 @@ export interface PlainClient {
     secondaryColor: string
     fontFamily: string
   }
-}
-
-export interface PlainLocation {
-  id: string
-  title: string
-  description: string
-  categories: string[]
-  images: string[]
-  status: 'draft' | 'published'
-  createdAt: string
-  updatedAt: string
-  [key: string]: unknown
 }
 
 type FirestoreValue = { toDate: () => Date } | Date | unknown

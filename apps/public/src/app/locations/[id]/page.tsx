@@ -4,6 +4,7 @@ import { getLocation, getFieldSchema } from '@/lib/db.server'
 import { ImageGallery } from '@/components/ImageGallery'
 import { DynamicFields } from '@/components/DynamicFields'
 import { LocationActions } from '@/components/LocationActions'
+import { AddToListButton } from '@/components/AddToListButton'
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID ?? 'demo-client'
 
@@ -89,7 +90,10 @@ export default async function LocationDetailPage({ params }: Props) {
       {/* ── CTA buttons ── */}
       <div className="mt-10 pt-8 border-t border-gray-200">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Interested in this location?</h2>
-        <LocationActions locationId={params.id} />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <LocationActions locationId={params.id} />
+          <AddToListButton locationId={params.id} locationTitle={title} />
+        </div>
       </div>
     </article>
   )

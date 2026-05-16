@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { getClient } from '@/lib/db.server'
 import { BrandProvider } from '@/components/BrandProvider'
+import { AuthProvider } from '@/context/AuthContext'
+import { AuthGate } from '@/components/AuthGate'
+import { UserMenu } from '@/components/UserMenu'
 import './globals.css'
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID ?? 'demo-client'
@@ -46,44 +49,51 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     >
       <head />
       <body suppressHydrationWarning className="min-h-screen bg-gray-50 text-gray-900 antialiased">
-        {/* ── Header ── */}
-        <header
-          className="sticky top-0 z-40 shadow-sm"
-          style={{ backgroundColor: 'var(--brand-primary)' }}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
-            {brand.logo ? (
-              <a href="/" aria-label={`${clientName} — home`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={brand.logo}
-                  alt={clientName}
-                  className="h-10 w-auto object-contain"
-                />
-              </a>
-            ) : (
-              <a
-                href="/"
-                className="text-xl font-bold tracking-tight text-white"
-              >
-                {clientName}
-              </a>
-            )}
-          </div>
-        </header>
+        <AuthProvider>
+          {/* ── Header ── */}
+          <header
+            className="sticky top-0 z-40 shadow-sm"
+            style={{ backgroundColor: 'var(--brand-primary)' }}
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+              {/* Logo / site name */}
+              <div>
+                {brand.logo ? (
+                  <a href="/" aria-label={`${clientName} — home`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={brand.logo}
+                      alt={clientName}
+                      className="h-10 w-auto object-contain"
+                    />
+                  </a>
+                ) : (
+                  <a href="/" className="text-xl font-bold tracking-tight text-white">
+                    {clientName}
+                  </a>
+                )}
+              </div>
 
-        {/* Keeps brand colours in sync with Firestore without a rebuild */}
-        <BrandProvider />
+              {/* User menu (renders nothing until signed in) */}
+              <UserMenu />
+            </div>
+          </header>
 
-        {/* ── Page content ── */}
-        <main>{children}</main>
+          {/* Keeps brand colours in sync with Firestore without a rebuild */}
+          <BrandProvider />
 
-        {/* ── Footer ── */}
-        <footer className="mt-20 border-t border-gray-200 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-sm text-gray-400">
-            © {new Date().getFullYear()} {clientName}. All rights reserved.
-          </div>
-        </footer>
+          {/* ── Auth gate + page content ── */}
+          <main>
+            <AuthGate>{children}</AuthGate>
+          </main>
+
+          {/* ── Footer ── */}
+          <footer className="mt-20 border-t border-gray-200 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-sm text-gray-400">
+              © {new Date().getFullYear()} {clientName}. All rights reserved.
+            </div>
+          </footer>
+        </AuthProvider>
       </body>
     </html>
   )

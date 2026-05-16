@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import type { PlainLocation } from '@/lib/db.server'
+import type { PlainLocation } from '@/lib/types'
 
 interface Props {
   location: PlainLocation
