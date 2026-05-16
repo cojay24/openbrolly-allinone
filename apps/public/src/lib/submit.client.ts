@@ -10,7 +10,7 @@ import {
   uploadBytesResumable,
   getDownloadURL,
 } from 'firebase/storage'
-import { getDb, getStorageInstance } from '@openbrolly/firebase'
+import { getDb, getStorageInstance, createTTLCache } from '@openbrolly/firebase'
 import type { FieldSchema } from '@openbrolly/firebase/types'
 import type { UserProfile } from '@/context/AuthContext'
 
@@ -18,12 +18,19 @@ const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID ?? 'demo-client'
 
 // ─── Field schema ─────────────────────────────────────────────────────────────
 
+// Shared with the locations.client cache — field schema rarely changes.
+const _schemaCache = createTTLCache<FieldSchema>(10 * 60 * 1000) // 10 min
+
 export async function getFieldSchema(): Promise<FieldSchema> {
+  const cached = _schemaCache.get()
+  if (cached) return cached
+
   const snap = await getDoc(
     doc(getDb(), 'clients', CLIENT_ID, 'fieldSchema', 'default')
   )
-  if (!snap.exists()) return { fields: [] }
-  return snap.data() as FieldSchema
+  const result: FieldSchema = snap.exists() ? (snap.data() as FieldSchema) : { fields: [] }
+  _schemaCache.set(result)
+  return result
 }
 
 // ─── Image upload ─────────────────────────────────────────────────────────────

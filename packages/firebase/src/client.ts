@@ -3,7 +3,13 @@
  * Import this only in browser/client-component contexts.
  */
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app'
-import { getFirestore, type Firestore } from 'firebase/firestore'
+import {
+  initializeFirestore,
+  getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  type Firestore,
+} from 'firebase/firestore'
 import { getStorage, type FirebaseStorage } from 'firebase/storage'
 import { getAuth, type Auth } from 'firebase/auth'
 
@@ -21,8 +27,26 @@ function getFirebaseApp(): FirebaseApp {
   return initializeApp(firebaseConfig)
 }
 
+// Singleton – initializeFirestore must only be called once per app instance.
+let _db: Firestore | null = null
+
 export function getDb(): Firestore {
-  return getFirestore(getFirebaseApp())
+  if (_db) return _db
+  const app = getFirebaseApp()
+  try {
+    // Persistent cache stores all reads in IndexedDB so subsequent page loads
+    // and future sessions are served locally – zero extra Firestore read charges
+    // for data that hasn't changed. Multi-tab manager keeps all open tabs in sync.
+    _db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    })
+  } catch {
+    // initializeFirestore already called (e.g. hot-reload / test env)
+    _db = getFirestore(app)
+  }
+  return _db
 }
 
 export function getStorageInstance(): FirebaseStorage {

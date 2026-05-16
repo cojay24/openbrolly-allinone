@@ -3,7 +3,7 @@ import {
   query, orderBy, where, serverTimestamp,
 } from 'firebase/firestore'
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
-import { getDb, getStorageInstance } from '@openbrolly/firebase'
+import { getDb, getStorageInstance, createTTLCache, createKeyedTTLCache } from '@openbrolly/firebase'
 import type { FieldDefinition, FieldSchema } from '@openbrolly/firebase/types'
 
 // ─── Serialisable types ───────────────────────────────────────────────────────
@@ -45,6 +45,34 @@ export interface PlainEnquiry {
   createdAt: string
 }
 
+export type AccountType   = 'viewer' | 'location-owner'
+export type AccountStatus = 'active' | 'pending' | 'rejected'
+
+export interface PlainUser {
+  uid: string
+  firstName: string
+  surname: string
+  email: string
+  phone: string
+  company: string
+  accountType: AccountType
+  accountStatus: AccountStatus
+  createdAt: string
+}
+
+type BrandConfig = { logo: string; primaryColor: string; secondaryColor: string }
+
+// ─── Module-level caches ──────────────────────────────────────────────────────
+// Admin sessions are short-lived; short TTLs keep data fresh while eliminating
+// redundant reads when navigating between pages in the same session.
+// Every mutating function busts its relevant cache so data stays consistent.
+
+const _locationsCache   = createTTLCache<PlainLocation[]>(2 * 60 * 1000)      // 2 min
+const _locationCache    = createKeyedTTLCache<PlainLocation>(5 * 60 * 1000)   // 5 min
+const _fieldSchemaCache = createKeyedTTLCache<FieldSchema>(10 * 60 * 1000)    // 10 min
+const _usersCache       = createTTLCache<PlainUser[]>(2 * 60 * 1000)          // 2 min
+const _brandCache       = createKeyedTTLCache<BrandConfig>(10 * 60 * 1000)    // 10 min
+
 // ─── Serialisation helpers ────────────────────────────────────────────────────
 
 type WithToDate = { toDate: () => Date }
@@ -63,16 +91,27 @@ function serializeDoc(data: Record<string, unknown>): Record<string, unknown> {
 // ─── Locations ────────────────────────────────────────────────────────────────
 
 export async function getLocations(clientId: string): Promise<PlainLocation[]> {
+  const cached = _locationsCache.get()
+  if (cached) return cached
+
   const snap = await getDocs(
     query(collection(getDb(), 'clients', clientId, 'locations'), orderBy('createdAt', 'desc'))
   )
-  return snap.docs.map((d) => ({ id: d.id, ...serializeDoc(d.data()) }) as PlainLocation)
+  const results = snap.docs.map((d) => ({ id: d.id, ...serializeDoc(d.data()) }) as PlainLocation)
+  _locationsCache.set(results)
+  results.forEach((l) => _locationCache.set(l.id, l))
+  return results
 }
 
 export async function getLocation(clientId: string, locationId: string): Promise<PlainLocation | null> {
+  const cached = _locationCache.get(locationId)
+  if (cached) return cached
+
   const snap = await getDoc(doc(getDb(), 'clients', clientId, 'locations', locationId))
   if (!snap.exists()) return null
-  return { id: snap.id, ...serializeDoc(snap.data()) } as PlainLocation
+  const result = { id: snap.id, ...serializeDoc(snap.data()) } as PlainLocation
+  _locationCache.set(locationId, result)
+  return result
 }
 
 export async function saveLocation(
@@ -87,20 +126,28 @@ export async function saveLocation(
   } else {
     await updateDoc(ref, { ...data, updatedAt: serverTimestamp() })
   }
+  // Bust caches so the next read reflects the change
+  _locationsCache.clear()
+  _locationCache.clear(locationId)
   return locationId
 }
 
 // ─── Field schema ─────────────────────────────────────────────────────────────
 
 export async function getFieldSchema(clientId: string): Promise<FieldSchema> {
+  const cached = _fieldSchemaCache.get(clientId)
+  if (cached) return cached
+
   const snap = await getDoc(doc(getDb(), 'clients', clientId, 'fieldSchema', 'default'))
-  if (!snap.exists()) return { fields: [] }
-  return snap.data() as FieldSchema
+  const result: FieldSchema = snap.exists() ? (snap.data() as FieldSchema) : { fields: [] }
+  _fieldSchemaCache.set(clientId, result)
+  return result
 }
 
 export async function saveFieldSchema(clientId: string, fields: FieldDefinition[]): Promise<void> {
   if (fields.length > 20) throw new Error('Maximum of 20 custom fields allowed.')
   await setDoc(doc(getDb(), 'clients', clientId, 'fieldSchema', 'default'), { fields })
+  _fieldSchemaCache.clear(clientId)
 }
 
 // ─── Enquiries ────────────────────────────────────────────────────────────────
@@ -160,10 +207,13 @@ export async function updateEnquiryStatus(
 // ─── Dashboard stats ──────────────────────────────────────────────────────────
 
 export async function getDashboardStats(clientId: string) {
-  const locsSnap = await getDocs(collection(getDb(), 'clients', clientId, 'locations'))
-  const totalLocations = locsSnap.size
-  const publishedLocations = locsSnap.docs.filter((d) => d.data().status === 'published').length
+  // Re-uses the locations cache if it was already loaded this session
+  const locations = await getLocations(clientId)
+  const totalLocations = locations.length
+  const publishedLocations = locations.filter((l) => l.status === 'published').length
 
+  // Enquiries still need separate fetching (no cache — time-sensitive)
+  const locsSnap = await getDocs(collection(getDb(), 'clients', clientId, 'locations'))
   let totalEnquiries = 0
   let unreadEnquiries = 0
 
@@ -182,23 +232,24 @@ export async function getDashboardStats(clientId: string) {
 
 // ─── Brand config ─────────────────────────────────────────────────────────────
 
-export async function getClientBrandConfig(clientId: string): Promise<{
-  logo: string
-  primaryColor: string
-  secondaryColor: string
-}> {
+export async function getClientBrandConfig(clientId: string): Promise<BrandConfig> {
+  const cached = _brandCache.get(clientId)
+  if (cached) return cached
+
   const snap = await getDoc(doc(getDb(), 'clients', clientId))
   const brand = (snap.data()?.brandConfig ?? {}) as Record<string, unknown>
-  return {
+  const result: BrandConfig = {
     logo: (brand.logo as string) ?? '',
     primaryColor: (brand.primaryColor as string) ?? '#4F46E5',
     secondaryColor: (brand.secondaryColor as string) ?? '#818CF8',
   }
+  _brandCache.set(clientId, result)
+  return result
 }
 
 export async function saveBrandConfig(
   clientId: string,
-  config: { logo: string; primaryColor: string; secondaryColor: string },
+  config: BrandConfig,
 ): Promise<void> {
   if (!/^#[0-9A-Fa-f]{6}$/.test(config.primaryColor)) throw new Error('Invalid primaryColor.')
   if (!/^#[0-9A-Fa-f]{6}$/.test(config.secondaryColor)) throw new Error('Invalid secondaryColor.')
@@ -207,6 +258,7 @@ export async function saveBrandConfig(
     'brandConfig.primaryColor': config.primaryColor,
     'brandConfig.secondaryColor': config.secondaryColor,
   })
+  _brandCache.clear(clientId)
 }
 
 // ─── Location submission review ───────────────────────────────────────────────
@@ -220,6 +272,8 @@ export async function approveLocation(
     status: publishNow ? 'published' : 'draft',
     updatedAt: serverTimestamp(),
   })
+  _locationsCache.clear()
+  _locationCache.clear(locationId)
 }
 
 export async function rejectLocation(clientId: string, locationId: string): Promise<void> {
@@ -227,32 +281,22 @@ export async function rejectLocation(clientId: string, locationId: string): Prom
     status: 'rejected',
     updatedAt: serverTimestamp(),
   })
+  _locationsCache.clear()
+  _locationCache.clear(locationId)
 }
 
 // ─── User management ──────────────────────────────────────────────────────────
-
-export type AccountType   = 'viewer' | 'location-owner'
-export type AccountStatus = 'active' | 'pending' | 'rejected'
-
-export interface PlainUser {
-  uid: string
-  firstName: string
-  surname: string
-  email: string
-  phone: string
-  company: string
-  accountType: AccountType
-  accountStatus: AccountStatus
-  createdAt: string
-}
 
 /**
  * Fetches all registered public-site users.
  * Requires the calling admin user to have a `clientId` field (isAdmin() rule).
  */
 export async function getUsers(): Promise<PlainUser[]> {
+  const cached = _usersCache.get()
+  if (cached) return cached
+
   const snap = await getDocs(collection(getDb(), 'users'))
-  return snap.docs
+  const results = snap.docs
     .map((d) => {
       const data = d.data()
       // Skip admin accounts (they have a clientId field)
@@ -270,14 +314,19 @@ export async function getUsers(): Promise<PlainUser[]> {
       } satisfies PlainUser
     })
     .filter(Boolean) as PlainUser[]
+
+  _usersCache.set(results)
+  return results
 }
 
 export async function updateUserAccountType(uid: string, accountType: AccountType): Promise<void> {
   await updateDoc(doc(getDb(), 'users', uid), { accountType })
+  _usersCache.clear()
 }
 
 export async function updateUserAccountStatus(uid: string, accountStatus: AccountStatus): Promise<void> {
   await updateDoc(doc(getDb(), 'users', uid), { accountStatus })
+  _usersCache.clear()
 }
 
 export async function uploadLogo(clientId: string, file: File): Promise<string> {

@@ -5,6 +5,8 @@
  * For TypeScript types import from '@openbrolly/firebase/types'.
  */
 export { getDb, getStorageInstance, getAuthInstance } from './client'
+export { createTTLCache, createKeyedTTLCache } from './cache'
+export type { TTLCache } from './cache'
 export type {
   Client,
   BrandConfig,
