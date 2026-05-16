@@ -185,12 +185,12 @@ function PendingCard({ location, onApprove, onReject }: PendingCardProps) {
         >
           Reject
         </button>
-        <a
-          href={`/dashboard/locations/${location.id}`}
+        <Link
+          href={`/dashboard/locations/edit?id=${location.id}`}
           className="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors text-center"
         >
           Preview
-        </a>
+        </Link>
       </div>
     </div>
   )

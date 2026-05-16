@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { useAdmin } from '@/context/AdminContext'
 import { getLocation, getFieldSchema } from '@/lib/db.client'
 import { LocationEditor } from '@/components/LocationEditor'
@@ -13,11 +12,7 @@ interface Props {
   id: string
 }
 
-export function EditLocationPageClient({ id: paramId }: Props) {
-  const pathname = usePathname()
-  // When served via the catch-all rewrite, paramId is '_'.
-  // Read the real location ID from the browser URL instead.
-  const id = pathname.split('/').filter(Boolean).pop() ?? paramId
+export function EditLocationPageClient({ id }: Props) {
   const { clientId } = useAdmin()
   const [location, setLocation] = useState<PlainLocation | null>(null)
   const [fieldSchema, setFieldSchema] = useState<FieldSchema>({ fields: [] })

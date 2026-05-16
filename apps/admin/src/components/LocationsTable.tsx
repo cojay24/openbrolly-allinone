@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import type { PlainLocation } from '@/lib/db.client'
 
 interface Props {
@@ -81,14 +82,12 @@ export function LocationsTable({ locations, publicSiteUrl }: Props) {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      {/* Use <a> not <Link> so the browser makes a real HTTP request
-                          that Firebase Hosting can rewrite to the _/index.html placeholder. */}
-                      <a
-                        href={`/dashboard/locations/${loc.id}`}
+                      <Link
+                        href={`/dashboard/locations/edit?id=${loc.id}`}
                         className="text-indigo-600 hover:text-indigo-800 font-medium text-xs focus-ring rounded"
                       >
                         Edit
-                      </a>
+                      </Link>
                       {publicSiteUrl && (
                         <a
                           href={`${publicSiteUrl}/locations/${loc.id}`}
