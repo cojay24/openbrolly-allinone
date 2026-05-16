@@ -103,7 +103,7 @@ export default async function LocationDetailPage({ params }: Props) {
           </h2>
           <p className="text-gray-500 text-sm mb-6">Get in touch with the location owner or save it to one of your project lists.</p>
           <div className="flex flex-col sm:flex-row gap-3">
-            <LocationActions locationId={params.id} />
+            <LocationActions locationId={params.id} locationTitle={title} />
             <AddToListButton locationId={params.id} locationTitle={title} />
           </div>
         </div>

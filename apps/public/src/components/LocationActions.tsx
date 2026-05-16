@@ -6,11 +6,12 @@ import { PermitModal } from './PermitModal'
 
 interface Props {
   locationId: string
+  locationTitle: string
 }
 
 type ActiveModal = 'enquiry' | 'permit' | null
 
-export function LocationActions({ locationId }: Props) {
+export function LocationActions({ locationId, locationTitle }: Props) {
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
 
   return (
@@ -40,10 +41,18 @@ export function LocationActions({ locationId }: Props) {
       </div>
 
       {activeModal === 'enquiry' && (
-        <EnquiryModal locationId={locationId} onClose={() => setActiveModal(null)} />
+        <EnquiryModal
+          locationId={locationId}
+          locationTitle={locationTitle}
+          onClose={() => setActiveModal(null)}
+        />
       )}
       {activeModal === 'permit' && (
-        <PermitModal locationId={locationId} onClose={() => setActiveModal(null)} />
+        <PermitModal
+          locationId={locationId}
+          locationTitle={locationTitle}
+          onClose={() => setActiveModal(null)}
+        />
       )}
     </>
   )

@@ -109,8 +109,33 @@ service cloud.firestore {
           // Anyone can submit a contact or permit enquiry (public form, no auth).
           allow create: if true
 
-          // Only the owning admin can read or mark an enquiry as read/replied.
-          allow read, update: if isClientAdmin(clientId)
+          // Admins can read all enquiries.
+          // Users can read their own enquiries (linked by userId).
+          allow read: if isClientAdmin(clientId)
+                      || (request.auth != null
+                          && resource.data.userId == request.auth.uid)
+
+          // Admins can update status freely.
+          // Users can only clear the unreadByUser flag on their own enquiries.
+          allow update: if isClientAdmin(clientId)
+                        || (request.auth != null
+                            && resource.data.userId == request.auth.uid
+                            && request.resource.data.diff(resource.data).affectedKeys()
+                               .hasOnly(['unreadByUser', 'unreadByAdmin']))
+
+          // ── Messages subcollection ───────────────────────────────────────────
+          match /messages/{messageId} {
+            // Admins and the enquiry owner can read the thread.
+            allow read: if isClientAdmin(clientId)
+                        || (request.auth != null
+                            && get(/databases/$(database)/documents/clients/$(clientId)/locations/$(locationId)/enquiries/$(enquiryId)).data.userId == request.auth.uid)
+
+            // Admins can post as 'admin'. Enquiry owners can post as 'user'.
+            allow create: if isClientAdmin(clientId)
+                          || (request.auth != null
+                              && get(/databases/$(database)/documents/clients/$(clientId)/locations/$(locationId)/enquiries/$(enquiryId)).data.userId == request.auth.uid
+                              && request.resource.data.senderRole == 'user')
+          }
         }
       }
 

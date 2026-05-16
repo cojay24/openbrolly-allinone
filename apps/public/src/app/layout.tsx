@@ -138,8 +138,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Account</p>
                   <ul className="space-y-2.5">
                     {[
-                      { label: 'Sign in', href: '#' },
-                      { label: 'Create account', href: '#' },
+                      { label: 'My enquiries', href: '/profile' },
+                      { label: 'My lists', href: '/my-lists' },
                       { label: 'Apply as location owner', href: '#' },
                     ].map((l) => (
                       <li key={l.label}>

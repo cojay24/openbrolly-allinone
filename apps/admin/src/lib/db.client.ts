@@ -1,5 +1,5 @@
 import {
-  collection, doc, getDoc, getDocs, setDoc, updateDoc,
+  collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc,
   query, orderBy, where, serverTimestamp,
 } from 'firebase/firestore'
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
@@ -42,6 +42,20 @@ export interface PlainEnquiry {
   intendedDates?: string
   descriptionOfUse?: string
   status: 'new' | 'read' | 'replied'
+  /** Firebase Auth UID of the user who submitted — present on enquiries created after messaging was added. */
+  userId?: string
+  /** True when the user has sent a reply the admin hasn't yet seen. */
+  unreadByAdmin?: boolean
+  /** True when the admin has replied and the user hasn't yet seen it. */
+  unreadByUser?: boolean
+  createdAt: string
+}
+
+export interface EnquiryMessage {
+  id: string
+  body: string
+  senderRole: 'user' | 'admin'
+  senderName: string
   createdAt: string
 }
 
@@ -202,6 +216,52 @@ export async function updateEnquiryStatus(
     doc(getDb(), 'clients', clientId, 'locations', locationId, 'enquiries', enquiryId),
     { status },
   )
+}
+
+/** Fetch the conversation thread for a single enquiry. */
+export async function getEnquiryMessages(
+  clientId: string,
+  locationId: string,
+  enquiryId: string,
+): Promise<EnquiryMessage[]> {
+  const path = `clients/${clientId}/locations/${locationId}/enquiries/${enquiryId}/messages`
+  const snap = await getDocs(query(collection(getDb(), path), orderBy('createdAt', 'asc')))
+  return snap.docs.map((d) => ({
+    id: d.id,
+    body: (d.data().body as string) ?? '',
+    senderRole: (d.data().senderRole as 'user' | 'admin') ?? 'admin',
+    senderName: (d.data().senderName as string) ?? '',
+    createdAt: serializeValue(d.data().createdAt) as string,
+  }))
+}
+
+/** Post an admin reply to an enquiry thread. Updates status → replied and flags user as having unread. */
+export async function sendAdminReply(
+  clientId: string,
+  locationId: string,
+  enquiryId: string,
+  body: string,
+  adminName: string,
+): Promise<EnquiryMessage> {
+  const path = `clients/${clientId}/locations/${locationId}/enquiries/${enquiryId}/messages`
+  const msgRef = await addDoc(collection(getDb(), path), {
+    body,
+    senderRole: 'admin',
+    senderName: adminName,
+    createdAt: serverTimestamp(),
+  })
+  // Update enquiry: mark replied and notify the user
+  await updateDoc(
+    doc(getDb(), 'clients', clientId, 'locations', locationId, 'enquiries', enquiryId),
+    { status: 'replied', unreadByUser: true, unreadByAdmin: false },
+  )
+  return {
+    id: msgRef.id,
+    body,
+    senderRole: 'admin',
+    senderName: adminName,
+    createdAt: new Date().toISOString(),
+  }
 }
 
 // ─── Dashboard stats ──────────────────────────────────────────────────────────

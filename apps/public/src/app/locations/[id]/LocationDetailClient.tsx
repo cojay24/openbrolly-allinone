@@ -124,7 +124,7 @@ export function LocationDetailClient() {
       <div className="mt-10 pt-8 border-t border-gray-200">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Interested in this location?</h2>
         <div className="flex flex-col sm:flex-row gap-3">
-          <LocationActions locationId={locationId} />
+          <LocationActions locationId={locationId} locationTitle={title} />
           <AddToListButton locationId={locationId} locationTitle={title} />
         </div>
       </div>

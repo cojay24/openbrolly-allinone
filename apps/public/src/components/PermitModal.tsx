@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { getDb } from '@openbrolly/firebase'
+import { useAuth } from '@/context/AuthContext'
 
 interface Props {
   locationId: string
+  locationTitle: string
   onClose: () => void
 }
 
@@ -29,7 +31,8 @@ const INITIAL: FormState = {
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID ?? 'demo-client'
 
-export function PermitModal({ locationId, onClose }: Props) {
+export function PermitModal({ locationId, locationTitle, onClose }: Props) {
+  const { user } = useAuth()
   const [form, setForm] = useState<FormState>(INITIAL)
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -63,6 +66,10 @@ export function PermitModal({ locationId, onClose }: Props) {
         ...form,
         type: 'permit',
         status: 'new',
+        locationTitle,
+        userId: user?.uid ?? null,
+        unreadByUser: false,
+        unreadByAdmin: true,
         createdAt: serverTimestamp(),
       })
       setStatus('success')
