@@ -5,13 +5,16 @@ import { ImageGallery } from '@/components/ImageGallery'
 import { DynamicFields } from '@/components/DynamicFields'
 import { LocationActions } from '@/components/LocationActions'
 import { AddToListButton } from '@/components/AddToListButton'
+import { LocationDetailClient } from './LocationDetailClient'
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID ?? 'demo-client'
 
 export async function generateStaticParams() {
   const { getPublishedLocations } = await import('@/lib/db.server')
   const locations = await getPublishedLocations(CLIENT_ID)
-  return locations.map((loc) => ({ id: loc.id }))
+  // '_' is the catch-all placeholder served via Firebase Hosting rewrite for
+  // any location URL that wasn't pre-generated at build time.
+  return [...locations.map((loc) => ({ id: loc.id })), { id: '_' }]
 }
 
 interface Props {
@@ -19,6 +22,7 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  if (params.id === '_') return {}
   const location = await getLocation(CLIENT_ID, params.id)
   if (!location) return {}
   return {
@@ -28,6 +32,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function LocationDetailPage({ params }: Props) {
+  // Catch-all placeholder: a new location was approved after the last build.
+  // The client component reads the real ID from the browser URL via usePathname().
+  if (params.id === '_') {
+    return <LocationDetailClient />
+  }
+
   const [location, fieldSchema] = await Promise.all([
     getLocation(CLIENT_ID, params.id),
     getFieldSchema(CLIENT_ID),

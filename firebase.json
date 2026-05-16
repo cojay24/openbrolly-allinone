@@ -6,6 +6,7 @@
       "cleanUrls": true,
       "trailingSlash": false,
       "rewrites": [
+        { "source": "/locations/**", "destination": "/locations/_/index.html" },
         { "source": "**", "destination": "/index.html" }
       ]
     },
@@ -15,6 +16,8 @@
       "cleanUrls": true,
       "trailingSlash": false,
       "rewrites": [
+        { "source": "/dashboard/locations/**", "destination": "/dashboard/locations/_/index.html" },
+        { "source": "/dashboard/**", "destination": "/dashboard/index.html" },
         { "source": "**", "destination": "/index.html" }
       ]
     }
