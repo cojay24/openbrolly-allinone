@@ -6,6 +6,7 @@ import { AuthProvider } from '@/context/AuthContext'
 import { AuthGate } from '@/components/AuthGate'
 import { UserMenu } from '@/components/UserMenu'
 import { SubmitLocationButton } from '@/components/SubmitLocationButton'
+import { LocationOwnerCTA } from '@/components/LocationOwnerCTA'
 import './globals.css'
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID ?? 'demo-client'
@@ -91,8 +92,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <AuthGate>{children}</AuthGate>
           </main>
 
+          {/* ── Location owner CTA ── */}
+          <LocationOwnerCTA />
+
           {/* ── Footer ── */}
-          <footer className="mt-20 border-t border-gray-200 bg-white">
+          <footer className="border-t border-gray-200 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-sm text-gray-400">
               © {new Date().getFullYear()} {clientName}. All rights reserved.
             </div>
