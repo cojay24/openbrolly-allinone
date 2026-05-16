@@ -48,14 +48,22 @@ service cloud.firestore {
       // Any authenticated user can create their own profile (signup flow).
       allow create: if request.auth != null && request.auth.uid == uid
 
-      // Users can update their own profile but cannot change accountType or
-      // accountStatus — those are admin-only fields.
+      // Users can update their own profile with two exceptions handled below.
       // Admins can update any field on any user profile.
       allow update: if request.auth != null
                     && (
+                      // Standard self-update: cannot touch accountType or accountStatus
                       (request.auth.uid == uid
                        && request.resource.data.accountType == resource.data.accountType
                        && request.resource.data.accountStatus == resource.data.accountStatus)
+
+                      // Location-owner application: a viewer may set themselves to
+                      // location-owner/pending. No other self-escalation is allowed.
+                      || (request.auth.uid == uid
+                          && resource.data.accountType == 'viewer'
+                          && request.resource.data.accountType == 'location-owner'
+                          && request.resource.data.accountStatus == 'pending')
+
                       || isAdmin()
                     )
 
