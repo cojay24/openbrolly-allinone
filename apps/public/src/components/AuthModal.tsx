@@ -10,11 +10,11 @@ export function AuthModal() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // ── Login state ────────────────────────────────────────────────────────────
+  // ── Login state ─────────────────────────────────────────────────────────────
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
 
-  // ── Signup state ───────────────────────────────────────────────────────────
+  // ── Signup state ────────────────────────────────────────────────────────────
   const [firstName, setFirstName] = useState('')
   const [surname, setSurname] = useState('')
   const [signupEmail, setSignupEmail] = useState('')
@@ -34,7 +34,6 @@ export function AuthModal() {
     setLoading(true)
     try {
       await signIn(loginEmail, loginPassword)
-      // AuthContext listener updates automatically — modal disappears via AuthGate
     } catch (err) {
       setError(getAuthErrorMessage(err))
     } finally {
@@ -67,59 +66,76 @@ export function AuthModal() {
   }
 
   const inputClass =
-    'w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition-colors'
+    'w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-colors'
+
+  const labelClass = 'block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Non-dismissable backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        {/* Header */}
-        <div className="px-8 pt-8 pb-6" style={{ backgroundColor: 'var(--brand-primary)' }}>
-          <h1 className="text-2xl font-bold text-white">
-            {view === 'login' ? 'Welcome back' : 'Create your account'}
-          </h1>
-          <p className="text-white/75 text-sm mt-1">
-            {view === 'login'
-              ? 'Sign in to browse and save locations'
-              : 'Sign up to browse and save locations to your projects'}
-          </p>
+      <div className="relative bg-white w-full max-w-md overflow-hidden shadow-2xl" style={{ borderRadius: '2px' }}>
+
+        {/* ── Header ── */}
+        <div
+          className="relative px-8 pt-10 pb-8 overflow-hidden"
+          style={{ backgroundColor: 'var(--brand-primary)' }}
+        >
+          {/* Decorative grid */}
+          <div className="absolute inset-0 opacity-5" style={{
+            backgroundImage: 'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+          }} />
+
+          {/* Gold accent line */}
+          <div className="relative">
+            <div className="h-px w-8 mb-5" style={{ backgroundColor: 'var(--brand-secondary)' }} />
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-2" style={{ color: 'var(--brand-secondary)' }}>
+              {view === 'login' ? 'Member access' : 'Join Openbrolly'}
+            </p>
+            <h1 className="font-display text-3xl font-semibold text-white leading-tight">
+              {view === 'login' ? 'Welcome back' : 'Create your account'}
+            </h1>
+            <p className="text-white/50 text-sm mt-2">
+              {view === 'login'
+                ? 'Sign in to browse and save locations'
+                : 'Join our community of location hunters and owners'}
+            </p>
+          </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 bg-gray-50">
+        {/* ── Tabs ── */}
+        <div className="flex border-b border-stone-100">
           {(['login', 'signup'] as View[]).map((v) => (
             <button
               key={v}
               onClick={() => switchView(v)}
-              className={`flex-1 py-3 text-sm font-semibold transition-colors ${
-                view === v ? 'bg-white' : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className="flex-1 py-3.5 text-xs font-semibold uppercase tracking-widest transition-colors"
               style={
                 view === v
-                  ? { color: 'var(--brand-primary)', borderBottom: '2px solid var(--brand-primary)' }
-                  : {}
+                  ? { color: 'var(--brand-primary)', borderBottom: '2px solid var(--brand-primary)', marginBottom: '-1px' }
+                  : { color: '#9ca3af' }
               }
             >
-              {v === 'login' ? 'Sign in' : 'Create account'}
+              {v === 'login' ? 'Sign in' : 'Register'}
             </button>
           ))}
         </div>
 
-        {/* Form area */}
-        <div className="px-8 py-6 max-h-[70vh] overflow-y-auto">
+        {/* ── Form area ── */}
+        <div className="px-8 py-7 max-h-[60vh] overflow-y-auto">
           {error && (
-            <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            <div className="mb-5 px-4 py-3 rounded bg-red-50 border border-red-100 text-red-600 text-sm">
               {error}
             </div>
           )}
 
-          {/* ── Login ── */}
+          {/* ── Login form ── */}
           {view === 'login' && (
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className={labelClass}>Email address</label>
                 <input
                   type="email"
                   required
@@ -127,11 +143,12 @@ export function AuthModal() {
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   className={inputClass}
+                  style={{ '--tw-ring-color': 'var(--brand-secondary)' } as React.CSSProperties}
                   placeholder="you@example.com"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label className={labelClass}>Password</label>
                 <input
                   type="password"
                   required
@@ -139,37 +156,40 @@ export function AuthModal() {
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   className={inputClass}
+                  style={{ '--tw-ring-color': 'var(--brand-secondary)' } as React.CSSProperties}
                   placeholder="••••••••"
                 />
               </div>
+
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-opacity hover:opacity-90 mt-2"
-                style={{ backgroundColor: 'var(--brand-primary)' }}
+                className="w-full py-3.5 text-sm font-semibold text-white disabled:opacity-60 transition-opacity hover:opacity-90"
+                style={{ backgroundColor: 'var(--brand-primary)', borderRadius: '2px' }}
               >
                 {loading ? 'Signing in…' : 'Sign in'}
               </button>
-              <p className="text-center text-sm text-gray-500">
-                Don&apos;t have an account?{' '}
+
+              <p className="text-center text-sm text-gray-400">
+                New here?{' '}
                 <button
                   type="button"
                   onClick={() => switchView('signup')}
                   className="font-semibold hover:underline"
-                  style={{ color: 'var(--brand-primary)' }}
+                  style={{ color: 'var(--brand-secondary)' }}
                 >
-                  Create one
+                  Create a free account
                 </button>
               </p>
             </form>
           )}
 
-          {/* ── Signup ── */}
+          {/* ── Signup form ── */}
           {view === 'signup' && (
-            <form onSubmit={handleSignup} className="space-y-3">
+            <form onSubmit={handleSignup} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">First name</label>
+                  <label className={labelClass}>First name</label>
                   <input
                     type="text"
                     required
@@ -177,11 +197,12 @@ export function AuthModal() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     className={inputClass}
+                    style={{ '--tw-ring-color': 'var(--brand-secondary)' } as React.CSSProperties}
                     placeholder="Jane"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Surname</label>
+                  <label className={labelClass}>Surname</label>
                   <input
                     type="text"
                     required
@@ -189,13 +210,14 @@ export function AuthModal() {
                     value={surname}
                     onChange={(e) => setSurname(e.target.value)}
                     className={inputClass}
+                    style={{ '--tw-ring-color': 'var(--brand-secondary)' } as React.CSSProperties}
                     placeholder="Smith"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className={labelClass}>Email address</label>
                 <input
                   type="email"
                   required
@@ -203,12 +225,13 @@ export function AuthModal() {
                   value={signupEmail}
                   onChange={(e) => setSignupEmail(e.target.value)}
                   className={inputClass}
+                  style={{ '--tw-ring-color': 'var(--brand-secondary)' } as React.CSSProperties}
                   placeholder="you@example.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone number</label>
+                <label className={labelClass}>Phone number</label>
                 <input
                   type="tel"
                   required
@@ -216,14 +239,15 @@ export function AuthModal() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className={inputClass}
+                  style={{ '--tw-ring-color': 'var(--brand-secondary)' } as React.CSSProperties}
                   placeholder="+44 7700 900000"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className={labelClass}>
                   Company / Organisation{' '}
-                  <span className="text-gray-400 font-normal">(optional)</span>
+                  <span className="normal-case text-gray-400 font-normal">(optional)</span>
                 </label>
                 <input
                   type="text"
@@ -231,12 +255,13 @@ export function AuthModal() {
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   className={inputClass}
+                  style={{ '--tw-ring-color': 'var(--brand-secondary)' } as React.CSSProperties}
                   placeholder="Acme Productions"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label className={labelClass}>Password</label>
                 <input
                   type="password"
                   required
@@ -245,14 +270,13 @@ export function AuthModal() {
                   value={signupPassword}
                   onChange={(e) => setSignupPassword(e.target.value)}
                   className={inputClass}
+                  style={{ '--tw-ring-color': 'var(--brand-secondary)' } as React.CSSProperties}
                   placeholder="Min. 6 characters"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm password
-                </label>
+                <label className={labelClass}>Confirm password</label>
                 <input
                   type="password"
                   required
@@ -260,6 +284,7 @@ export function AuthModal() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className={inputClass}
+                  style={{ '--tw-ring-color': 'var(--brand-secondary)' } as React.CSSProperties}
                   placeholder="••••••••"
                 />
               </div>
@@ -267,19 +292,19 @@ export function AuthModal() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-opacity hover:opacity-90 mt-1"
-                style={{ backgroundColor: 'var(--brand-primary)' }}
+                className="w-full py-3.5 text-sm font-semibold text-white disabled:opacity-60 transition-opacity hover:opacity-90"
+                style={{ backgroundColor: 'var(--brand-primary)', borderRadius: '2px' }}
               >
                 {loading ? 'Creating account…' : 'Create account'}
               </button>
 
-              <p className="text-center text-sm text-gray-500">
+              <p className="text-center text-sm text-gray-400">
                 Already have an account?{' '}
                 <button
                   type="button"
                   onClick={() => switchView('login')}
                   className="font-semibold hover:underline"
-                  style={{ color: 'var(--brand-primary)' }}
+                  style={{ color: 'var(--brand-secondary)' }}
                 >
                   Sign in
                 </button>

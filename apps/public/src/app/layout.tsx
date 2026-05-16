@@ -25,9 +25,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   let brand = {
-    primaryColor: '#1a1a2e',
-    secondaryColor: '#e94560',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
+    primaryColor: '#111111',
+    secondaryColor: '#C9A96E',
+    fontFamily: "'Inter', system-ui, sans-serif",
     logo: '',
   }
   let clientName = 'Locations'
@@ -50,33 +50,36 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       } as React.CSSProperties}
     >
       <head />
-      <body suppressHydrationWarning className="min-h-screen bg-gray-50 text-gray-900 antialiased">
+      <body suppressHydrationWarning className="min-h-screen bg-[#FAFAF8] text-gray-900 antialiased">
         <AuthProvider>
+
           {/* ── Header ── */}
           <header
-            className="sticky top-0 z-40 shadow-sm"
+            className="sticky top-0 z-40"
             style={{ backgroundColor: 'var(--brand-primary)' }}
           >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">
               {/* Logo / site name */}
-              <div>
+              <div className="flex-shrink-0">
                 {brand.logo ? (
                   <a href="/" aria-label={`${clientName} — home`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={brand.logo}
                       alt={clientName}
-                      className="h-10 w-auto object-contain"
+                      className="h-9 w-auto object-contain"
                     />
                   </a>
                 ) : (
-                  <a href="/" className="text-xl font-bold tracking-tight text-white">
-                    {clientName}
+                  <a href="/" className="flex items-center gap-2.5 group">
+                    <span className="font-display text-xl font-semibold tracking-tight text-white group-hover:opacity-80 transition-opacity">
+                      {clientName}
+                    </span>
                   </a>
                 )}
               </div>
 
-              {/* Right-side header actions */}
+              {/* Right-side actions */}
               <div className="flex items-center gap-3">
                 <SubmitLocationButton />
                 <UserMenu />
@@ -87,7 +90,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           {/* Keeps brand colours in sync with Firestore without a rebuild */}
           <BrandProvider />
 
-          {/* ── Auth gate + page content ── */}
+          {/* ── Page content ── */}
           <main>
             <AuthGate>{children}</AuthGate>
           </main>
@@ -96,11 +99,73 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <LocationOwnerCTA />
 
           {/* ── Footer ── */}
-          <footer className="border-t border-gray-200 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-sm text-gray-400">
-              © {new Date().getFullYear()} {clientName}. All rights reserved.
+          <footer className="bg-[#111111] text-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 mb-12">
+                {/* Brand column */}
+                <div>
+                  <p className="font-display text-xl font-semibold text-white mb-3">
+                    {clientName}
+                  </p>
+                  <p className="text-sm text-white/50 leading-relaxed max-w-xs">
+                    Connecting creative professionals with extraordinary spaces across the UK.
+                  </p>
+                </div>
+
+                {/* Platform column */}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Platform</p>
+                  <ul className="space-y-2.5">
+                    {[
+                      { label: 'Browse locations', href: '/' },
+                      { label: 'My lists', href: '/my-lists' },
+                      { label: 'Submit a location', href: '/submit-location' },
+                    ].map((l) => (
+                      <li key={l.href}>
+                        <a
+                          href={l.href}
+                          className="text-sm text-white/60 hover:text-white transition-colors"
+                        >
+                          {l.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Account column */}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Account</p>
+                  <ul className="space-y-2.5">
+                    {[
+                      { label: 'Sign in', href: '#' },
+                      { label: 'Create account', href: '#' },
+                      { label: 'Apply as location owner', href: '#' },
+                    ].map((l) => (
+                      <li key={l.label}>
+                        <a
+                          href={l.href}
+                          className="text-sm text-white/60 hover:text-white transition-colors"
+                        >
+                          {l.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p className="text-xs text-white/30">
+                  © {new Date().getFullYear()} {clientName}. All rights reserved.
+                </p>
+                <p className="text-xs text-white/20">
+                  Powered by Openbrolly
+                </p>
+              </div>
             </div>
           </footer>
+
         </AuthProvider>
       </body>
     </html>

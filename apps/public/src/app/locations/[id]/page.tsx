@@ -12,8 +12,6 @@ const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID ?? 'demo-client'
 export async function generateStaticParams() {
   const { getPublishedLocations } = await import('@/lib/db.server')
   const locations = await getPublishedLocations(CLIENT_ID)
-  // '_' is the catch-all placeholder served via Firebase Hosting rewrite for
-  // any location URL that wasn't pre-generated at build time.
   return [...locations.map((loc) => ({ id: loc.id })), { id: '_' }]
 }
 
@@ -32,11 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function LocationDetailPage({ params }: Props) {
-  // Catch-all placeholder: a new location was approved after the last build.
-  // The client component reads the real ID from the browser URL via usePathname().
-  if (params.id === '_') {
-    return <LocationDetailClient />
-  }
+  if (params.id === '_') return <LocationDetailClient />
 
   const [location, fieldSchema] = await Promise.all([
     getLocation(CLIENT_ID, params.id),
@@ -51,58 +45,67 @@ export default async function LocationDetailPage({ params }: Props) {
   const description = location.description as string
 
   return (
-    <article className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* ── Back link ── */}
-      <a
-        href="/"
-        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors"
-      >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-        All locations
-      </a>
-
-      {/* ── Image gallery ── */}
+    <article>
+      {/* ── Full-width hero image ── */}
       {images.length > 0 && (
-        <div className="mb-8">
+        <div className="w-full bg-stone-900" style={{ maxHeight: '70vh', overflow: 'hidden' }}>
           <ImageGallery images={images} title={title} />
         </div>
       )}
 
-      {/* ── Title + categories ── */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">{title}</h1>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* ── Back link ── */}
+        <a
+          href="/"
+          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-700 mb-8 transition-colors group"
+        >
+          <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          All locations
+        </a>
 
+        {/* ── Categories ── */}
         {categories.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3" aria-label="Categories">
+          <div className="flex flex-wrap gap-2 mb-5">
             {categories.map((cat) => (
               <span
                 key={cat}
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
-                style={{ backgroundColor: 'var(--brand-primary)' }}
+                className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide border"
+                style={{ borderColor: 'var(--brand-secondary)', color: 'var(--brand-secondary)' }}
               >
                 {cat}
               </span>
             ))}
           </div>
         )}
-      </div>
 
-      {/* ── Description ── */}
-      <div className="prose prose-gray max-w-none mb-8">
-        <p className="text-gray-600 text-lg leading-relaxed">{description}</p>
-      </div>
+        {/* ── Title ── */}
+        <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 leading-tight mb-6">
+          {title}
+        </h1>
 
-      {/* ── Dynamic fields (showOnPublic only, excluding core fields) ── */}
-      <DynamicFields location={location} fieldSchema={fieldSchema} />
+        {/* ── Description ── */}
+        <p className="text-lg text-gray-600 leading-relaxed mb-10 max-w-3xl">
+          {description}
+        </p>
 
-      {/* ── CTA buttons ── */}
-      <div className="mt-10 pt-8 border-t border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Interested in this location?</h2>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <LocationActions locationId={params.id} />
-          <AddToListButton locationId={params.id} locationTitle={title} />
+        {/* ── Divider ── */}
+        <hr className="border-stone-200 mb-10" />
+
+        {/* ── Dynamic fields ── */}
+        <DynamicFields location={location} fieldSchema={fieldSchema} />
+
+        {/* ── CTA ── */}
+        <div className="mt-12 pt-10 border-t border-stone-200">
+          <h2 className="font-display text-2xl font-semibold text-gray-900 mb-2">
+            Interested in this location?
+          </h2>
+          <p className="text-gray-500 text-sm mb-6">Get in touch with the location owner or save it to one of your project lists.</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <LocationActions locationId={params.id} />
+            <AddToListButton locationId={params.id} locationTitle={title} />
+          </div>
         </div>
       </div>
     </article>
