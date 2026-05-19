@@ -5,14 +5,18 @@ import { useRouter } from 'next/navigation'
 import { useAdmin } from '@/context/AdminContext'
 
 export function DashboardGuard({ children }: { children: ReactNode }) {
-  const { user, loading } = useAdmin()
+  const { user, clientId, loading } = useAdmin()
   const router = useRouter()
 
   useEffect(() => {
     if (!loading && !user) {
       router.replace('/login')
     }
-  }, [user, loading, router])
+    // Logged in but no clientId means the account isn't an admin — send back to login
+    if (!loading && user && !clientId) {
+      router.replace('/login?error=unauthorized')
+    }
+  }, [user, clientId, loading, router])
 
   if (loading) {
     return (
@@ -22,7 +26,7 @@ export function DashboardGuard({ children }: { children: ReactNode }) {
     )
   }
 
-  if (!user) return null
+  if (!user || !clientId) return null
 
   return <>{children}</>
 }
